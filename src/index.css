@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #eef5fd;
+  --surface: #ffffff;
+  --text: #14253a;
+  --text-soft: #52667f;
+  --line: #c9dcf2;
+  --accent: #185fa5;
+  --accent-deep: #0f3f73;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcebfb;
+  --dots: #cfe0f4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1722;
+    --surface: #17212e;
+    --text: #e8eef6;
+    --text-soft: #9aa8ba;
+    --line: #2a3646;
+    --accent: #6fb0ee;
+    --accent-deep: #3c7fc0;
+    --accent-ink: #0b1a2b;
+    --accent-soft: #1b2e45;
+    --dots: #1c2a3b;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1722;
+  --surface: #17212e;
+  --text: #e8eef6;
+  --text-soft: #9aa8ba;
+  --line: #2a3646;
+  --accent: #6fb0ee;
+  --accent-deep: #3c7fc0;
+  --accent-ink: #0b1a2b;
+  --accent-soft: #1b2e45;
+  --dots: #1c2a3b;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--text);
+  --color-soft: var(--text-soft);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-deep: var(--accent-deep);
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "Nunito Variable", system-ui, sans-serif;
+}
+
+html { color-scheme: light dark; accent-color: var(--accent); }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+html, body, #root { min-height: 100%; }
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dots) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+button, [role="button"], input, select, textarea { min-height: 48px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  letter-spacing: -0.01em;
+}
+
+.sticker {
+  border: 2px solid var(--line);
+  box-shadow: 0 4px 0 var(--line);
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-5px) rotate(1.5deg); }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.bob { animation: bob 4s ease-in-out infinite; }
+.pop { animation: pop 0.35s ease-out; }
+.rise > * { animation: rise 0.45s ease-out backwards; }
+.rise > *:nth-child(2) { animation-delay: 0.06s; }
+.rise > *:nth-child(3) { animation-delay: 0.12s; }
+.rise > *:nth-child(4) { animation-delay: 0.18s; }
+.rise > *:nth-child(5) { animation-delay: 0.24s; }
+
+.sheet { animation: sheet-in 0.3s ease-out; }
+@keyframes sheet-in { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.hop { animation: hop 0.5s ease-out; }
+@keyframes hop {
+  0% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-18px) scale(0.95, 1.08); }
+  60% { transform: translateY(0) scale(1.08, 0.92); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(6deg); }
+}
+.float { animation: float 7s ease-in-out infinite; opacity: 0.15; }
+
+@keyframes burst {
+  0% { transform: translate(0, 0) scale(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(40deg); opacity: 0; }
+}
+.spark { animation: burst 0.9s ease-out backwards; }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg); }
+  75% { transform: rotate(12deg); }
+}
+
+/* Extra whimsy: everything below only applies when it is switched on in Settings. */
+[data-whimsy="off"] .doodles,
+[data-whimsy="off"] .sparkles { display: none; }
+
+[data-whimsy="on"] nav [aria-current="page"] svg { animation: wiggle 0.5s ease-out; }
+[data-whimsy="on"] .tilt-l { transform: rotate(-1.2deg); }
+[data-whimsy="on"] .tilt-r { transform: rotate(1.2deg); }
+[data-whimsy="on"] .squiggle::after {
+  content: "";
+  display: block;
+  width: 96px;
+  height: 10px;
+  margin-top: 2px;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10' viewBox='0 0 24 10'%3E%3Cpath d='M0 5q6-8 12 0t12 0' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x left center / 24px 10px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='10' viewBox='0 0 24 10'%3E%3Cpath d='M0 5q6-8 12 0t12 0' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x left center / 24px 10px;
+}
+[data-whimsy="on"] button:not(:disabled):hover { transform: translateY(-1px) rotate(-0.4deg); }
+[data-whimsy="on"] .sticker:is(button):not(:disabled):hover { box-shadow: 0 6px 0 var(--line); }
+
+.celebrate { animation: celebrate-in 0.45s cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes celebrate-in {
+  from { transform: scale(0.7) translateY(20px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float, .bob, .hop { animation: none !important; }
+  .spark { display: none; }
+}
+
+/* Native date picker, kept for its familiar phone wheel, but themed to match. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+  font-family: inherit;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  opacity: 1;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='4'/%3E%3Cpath d='M8 3v4M16 3v4M3.5 10h17'/%3E%3Ccircle cx='12' cy='15' r='1.2' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='4'/%3E%3Cpath d='M8 3v4M16 3v4M3.5 10h17'/%3E%3Ccircle cx='12' cy='15' r='1.2' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
+}
