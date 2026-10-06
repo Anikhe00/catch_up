@@ -81,7 +81,6 @@ export function Settings({ term, today }: { term: Term; today: string }) {
       name: t.name.trim(),
       unitLabel: t.unitLabel.trim() || 'Unit',
       routine: t.routine.filter((s) => s.label.trim()),
-      writing: t.writing.filter((w) => w.label.trim()),
     }
     updateTerm(() => cleaned)
     setT(cleaned)
@@ -101,16 +100,6 @@ export function Settings({ term, today }: { term: Term; today: string }) {
           onChange={(routine) => edit((x) => ({ ...x, routine }))}
           makeItem={(label) => ({ id: crypto.randomUUID(), label })}
           addLabel="Add step"
-        />
-      </Section>
-
-      <Section title="Writing checklist" hint="Shown once the study target date has passed.">
-        <ListEditor
-          items={t.writing}
-          onChange={(writing) => edit((x) => ({ ...x, writing }))}
-          makeItem={(label) => ({ id: crypto.randomUUID(), label, done: false })}
-          addLabel="Add writing task"
-          itemLabel="Writing task"
         />
       </Section>
 

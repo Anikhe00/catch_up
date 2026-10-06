@@ -18,6 +18,7 @@ export function defaultTerm(): Term {
     id: id(),
     name: 'MSc Semester 1 CA',
     unitLabel: 'Week',
+    studyStyle: 'focus',
     startDate: '2026-10-01',
     targetDate: '2026-10-31',
     deadlineDate: '2026-11-14',
@@ -28,9 +29,6 @@ export function defaultTerm(): Term {
       'Take the quiz',
       'Write 3 key points',
     ].map((label) => ({ id: id(), label })),
-    writing: ['Plan the structure', 'Write the first draft', 'Revise and edit', 'Final check and submit'].map(
-      (label) => ({ id: id(), label, done: false }),
-    ),
     units: {
       [unitKey(courses[0].id, 1)]: { done: true, steps: {}, keyPoints: '', unclear: '' },
     },

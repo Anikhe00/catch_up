@@ -17,7 +17,6 @@ function validTerm(t: unknown): boolean {
     Array.isArray(t.courses) &&
     t.courses.every((c) => isObj(c) && typeof c.id === 'string' && typeof c.weeks === 'number') &&
     Array.isArray(t.routine) &&
-    Array.isArray(t.writing) &&
     isObj(t.units) &&
     isObj(t.busyDays)
   )

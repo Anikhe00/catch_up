@@ -29,3 +29,12 @@ export function addDays(d: DateStr, n: number): DateStr {
 export function isValidDate(d: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(d) && fromDayNumber(toDayNumber(d)) === d
 }
+
+/** e.g. "12 Oct" or "12 Oct 2026" */
+export function formatDate(d: DateStr, withYear = false): string {
+  return new Date(`${d}T00:00:00`).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    ...(withYear ? { year: 'numeric' } : {}),
+  })
+}

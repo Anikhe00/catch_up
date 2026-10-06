@@ -34,9 +34,17 @@ export function isDone(term: Term, ref: UnitRef): boolean {
   return getUnit(term, ref.course.id, ref.week).done
 }
 
-/** The suggested unit for today: first not-done unit in rotation order. */
+export const studyStyle = (term: Term): 'focus' | 'rotate' => term.studyStyle ?? 'focus'
+
+/** The order units are suggested in: course by course, or rotating through weeks. */
+export function studyOrder(term: Term): UnitRef[] {
+  if (studyStyle(term) === 'rotate') return orderedUnits(term)
+  return term.courses.flatMap((course) => Array.from({ length: course.weeks }, (_, i) => ({ course, week: i + 1 })))
+}
+
+/** The suggested unit for today: first not-done unit in study order. */
 export function nextUnit(term: Term): UnitRef | null {
-  return orderedUnits(term).find((u) => !isDone(term, u)) ?? null
+  return studyOrder(term).find((u) => !isDone(term, u)) ?? null
 }
 
 export function progressCounts(term: Term) {

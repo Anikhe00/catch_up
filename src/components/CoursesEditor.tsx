@@ -1,12 +1,16 @@
 import { useState } from 'react'
-import type { Course } from '../types'
+import { ASSESSMENT_LABELS, ASSESSMENT_TYPES } from '../logic/assessment'
+import { formatDate } from '../logic/dates'
+import type { AssessmentType, Course } from '../types'
 import { Mascot } from './Mascot'
 import { Sheet } from './Sheet'
 import { Button, Field, IconButton, inputClass } from './ui'
 
-function summary(c: Course): string {
+function summary(c: Course, manual: boolean): string {
   const set = Array.from({ length: c.weeks }, (_, i) => (c.topics?.[i] ?? '').trim()).filter(Boolean).length
-  return `${c.weeks} week${c.weeks === 1 ? '' : 's'} · ${set} of ${c.weeks} planned`
+  const ca = c.assessment ? ` · ${ASSESSMENT_LABELS[c.assessment.type]}` : ''
+  const by = manual && c.finishBy ? ` · finish by ${formatDate(c.finishBy)}` : ''
+  return `${c.weeks} week${c.weeks === 1 ? '' : 's'} · ${set} of ${c.weeks} planned${ca}${by}`
 }
 
 /** A compact course list. Each course opens in a panel for its details and weekly topics. */
@@ -14,10 +18,13 @@ export function CoursesEditor({
   courses,
   onChange,
   unitLabel,
+  manualDates = false,
 }: {
   courses: Course[]
   onChange: (c: Course[]) => void
   unitLabel: string
+  /** Show a finish-by date for each course. */
+  manualDates?: boolean
 }) {
   const [editId, setEditId] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
@@ -64,7 +71,7 @@ export function CoursesEditor({
           <span className="min-w-0 flex-1">
             <span className="block font-bold">{c.code.trim() || 'New course'}</span>
             <span className="block truncate text-soft">{c.title.trim() || 'Add a title'}</span>
-            <span className="mt-1 block text-sm text-soft">{summary(c)}</span>
+            <span className="mt-1 block text-sm text-soft">{summary(c, manualDates)}</span>
           </span>
           <span className="shrink-0 rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">Edit</span>
         </button>
@@ -94,6 +101,51 @@ export function CoursesEditor({
               </div>
             </div>
           </div>
+
+          {manualDates && (
+            <div className="mt-4">
+              <Field label="Finish this course by (optional)">
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={course.finishBy ?? ''}
+                  onChange={(e) => patch({ finishBy: e.target.value || undefined })}
+                />
+              </Field>
+            </div>
+          )}
+
+          <h3 className="mt-8 text-lg font-semibold">Assessment</h3>
+          <p className="text-sm text-soft">The graded piece for this course. You will be nudged to take it once the units are done.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Assessment type">
+            {([undefined, ...ASSESSMENT_TYPES] as (AssessmentType | undefined)[]).map((t) => {
+              const on = course.assessment?.type === t
+              return (
+                <button
+                  key={t ?? 'none'}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => patch({ assessment: t ? { ...course.assessment, type: t } : undefined })}
+                  className={`min-h-12 rounded-2xl border-2 px-3 text-sm font-bold ${on ? 'border-accent bg-accent text-on-accent' : 'border-line bg-surface'}`}
+                >
+                  {t ? ASSESSMENT_LABELS[t] : 'None'}
+                </button>
+              )
+            })}
+          </div>
+          {course.assessment && (
+            <div className="mt-3">
+              <Field label="Closes on (optional, defaults to your final deadline)">
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={course.assessment.closes ?? ''}
+                  onChange={(e) => patch({ assessment: { ...course.assessment!, closes: e.target.value || undefined } })}
+                />
+              </Field>
+            </div>
+          )}
 
           <h3 className="mt-8 text-lg font-semibold">What to study each {label.toLowerCase()}</h3>
           <p className="text-sm text-soft">Optional. This shows up on Today so you know what you are opening.</p>

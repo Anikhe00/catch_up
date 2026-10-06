@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Button, Card, ProgressBar } from '../components/ui'
 import { Says } from '../components/Mascot'
+import { ASSESSMENT_LABELS } from '../logic/assessment'
+import { formatDate } from '../logic/dates'
 import { courseProgress, progressCounts } from '../logic/units'
 import { useAppData } from '../store/AppDataContext'
 import type { Term } from '../types'
 
-const fmt = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+const fmt = (d: string) => formatDate(d, true)
 
 function Archived({ term }: { term: Term }) {
   const [open, setOpen] = useState(false)
@@ -26,9 +27,19 @@ function Archived({ term }: { term: Term }) {
           {term.courses.map((c) => {
             const p = courseProgress(term, c)
             return (
-              <li key={c.id} className="flex justify-between gap-3">
-                <span>{c.code} {c.title}</span>
-                <span className="shrink-0 text-soft">{p.done} of {p.total}</span>
+              <li key={c.id}>
+                <div className="flex justify-between gap-3">
+                  <span>{c.code} {c.title}</span>
+                  <span className="shrink-0 text-soft">{p.done} of {p.total}</span>
+                </div>
+                {c.assessment && (
+                  <p className="text-soft">
+                    {ASSESSMENT_LABELS[c.assessment.type]}:{' '}
+                    {c.assessment.takenOn
+                      ? `taken ${formatDate(c.assessment.takenOn)}${c.assessment.score ? `, ${c.assessment.score}` : ''}`
+                      : 'not taken'}
+                  </p>
+                )}
               </li>
             )
           })}

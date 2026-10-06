@@ -1,6 +1,6 @@
 import type { DateStr, Term } from '../types'
 import { addDays, daysBetween } from './dates'
-import { orderedUnits, progressCounts } from './units'
+import { orderedUnits, progressCounts, studyStyle } from './units'
 
 /** A busy day counts as half a day of capacity. */
 export const BUSY_WEIGHT = 0.5
@@ -17,7 +17,8 @@ export function capacity(term: Term, from: DateStr, to: DateStr): number {
   return total
 }
 
-export type Phase = 'study' | 'writing'
+/** 'final' is after the study target date, when only the deadline and any open work matter. */
+export type Phase = 'study' | 'final'
 
 export type PaceStatus =
   | { kind: 'on-track' }
@@ -59,13 +60,30 @@ export function computePace(term: Term, today: DateStr): Pace {
 
   const daysToTarget = daysBetween(today, term.targetDate)
   const daysToDeadline = daysBetween(today, term.deadlineDate)
-  const phase: Phase = daysToTarget < 0 ? 'writing' : 'study'
+  const phase: Phase = daysToTarget < 0 ? 'final' : 'study'
   const isBusyToday = !!term.busyDays[today]
 
   // Daily target: what was left at the start of today, spread over today's capacity onward.
   const remainingAtStart = remaining + doneToday
   const capFromToday = phase === 'study' ? capacity(term, today, term.targetDate) : 0
-  const perFullDay = capFromToday > 0 ? remainingAtStart / capFromToday : remainingAtStart
+  let perFullDay = capFromToday > 0 ? remainingAtStart / capFromToday : remainingAtStart
+
+  // With manual course dates, today's target is for the course you are on, up to its own finish-by date.
+  if (phase === 'study' && studyStyle(term) === 'focus' && term.slotMode === 'manual') {
+    const openAtStart = (c: Term['courses'][number]) => {
+      let n = 0
+      for (let w = 1; w <= c.weeks; w++) {
+        const u = term.units[`${c.id}:${w}`]
+        if (!u?.done || u.doneOn === today) n++
+      }
+      return n
+    }
+    const focus = term.courses.find((c) => openAtStart(c) > 0)
+    if (focus?.finishBy && daysBetween(today, focus.finishBy) >= 0) {
+      const cap = capacity(term, today, focus.finishBy)
+      perFullDay = cap > 0 ? openAtStart(focus) / cap : openAtStart(focus)
+    }
+  }
   const todayTarget = remainingAtStart === 0 ? 0 : perFullDay * (isBusyToday ? BUSY_WEIGHT : 1)
 
   // Pace: compare progress with an even plan across the whole study window, through end of today.

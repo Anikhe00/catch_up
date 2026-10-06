@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CelebrationInfo } from '../components/Celebration'
+import { ASSESSMENT_LABELS, caState } from '../logic/assessment'
 import { courseProgress, nextUnit, progressCounts, topicOf, type UnitRef } from '../logic/units'
 import type { Term } from '../types'
 
@@ -21,18 +22,23 @@ export function describeDone(t: Term, key: string): { info: CelebrationInfo; nex
       info: {
         level: 'all',
         title: 'Every unit is done.',
-        body: `All ${total} units finished. The rest of your time is for writing.`,
+        body: `All ${total} units finished. Nicely done.`,
       },
     }
   }
   if (courseProgress(t, course).done === course.weeks) {
+    const waiting = course.assessment && caState(t, course) === 'ready' ? ASSESSMENT_LABELS[course.assessment.type] : undefined
     return {
       next,
       info: {
         level: 'course',
         title: `${course.code} is finished.`,
-        body: `Every ${unit} of ${course.title || course.code} is done. ${done} of ${total} units complete.`,
+        body: `Every ${unit} of ${course.title || course.code} is done. ${done} of ${total} units complete.${
+          waiting ? ` Your ${waiting} is ready. Take it while it is fresh.` : ''
+        }`,
         nextLabel,
+        assessmentCourseId: waiting ? course.id : undefined,
+        assessmentLabel: waiting,
       },
     }
   }

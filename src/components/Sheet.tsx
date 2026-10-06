@@ -4,7 +4,9 @@ import { useEffect, useRef, type ReactNode } from 'react'
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
-  closeRef.current = onClose
+  useEffect(() => {
+    closeRef.current = onClose
+  })
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()

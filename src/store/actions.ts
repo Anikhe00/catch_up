@@ -1,4 +1,4 @@
-import type { DateStr, Term, UnitProgress, WritingItem } from '../types'
+import type { Assessment, DateStr, Term, UnitProgress } from '../types'
 import { addDays } from '../logic/dates'
 import { emptyProgress, unitKey } from '../logic/units'
 
@@ -47,23 +47,43 @@ export function toggleBusy(t: Term, day: DateStr): Term {
   return { ...t, busyDays }
 }
 
-export function setWriting(t: Term, writing: WritingItem[]): Term {
-  return { ...t, writing }
-}
-
-/** A blank term for the next round, keeping courses, routine, and writing steps but none of the progress. */
+/** A blank term for the next round, keeping courses and routine steps but none of the progress. */
 export function freshTerm(prev: Term, today: DateStr): Term {
   return {
     id: crypto.randomUUID(),
     name: '',
     unitLabel: prev.unitLabel,
+    studyStyle: prev.studyStyle,
+    slotMode: prev.slotMode,
     startDate: today,
     targetDate: addDays(today, 30),
     deadlineDate: addDays(today, 44),
-    courses: prev.courses.map((c) => ({ ...c, id: crypto.randomUUID(), topics: [] })),
+    courses: prev.courses.map((c) => ({
+      ...c,
+      id: crypto.randomUUID(),
+      topics: [],
+      finishBy: undefined,
+      assessment: c.assessment ? { type: c.assessment.type } : undefined,
+    })),
     routine: prev.routine.map((s) => ({ ...s })),
-    writing: prev.writing.map((w) => ({ ...w, done: false })),
     units: {},
     busyDays: {},
   }
+}
+
+function withCourse(t: Term, courseId: string, fn: (a: Assessment | undefined) => Assessment | undefined): Term {
+  return { ...t, courses: t.courses.map((c) => (c.id === courseId ? { ...c, assessment: fn(c.assessment) } : c)) }
+}
+
+/** Records the assessment as taken, with an optional score. */
+export function takeAssessment(t: Term, courseId: string, takenOn: DateStr, score: string): Term {
+  return withCourse(t, courseId, (a) => (a ? { ...a, takenOn, score: score.trim() || undefined } : a))
+}
+
+export function untakeAssessment(t: Term, courseId: string): Term {
+  return withCourse(t, courseId, (a) => {
+    if (!a) return a
+    const { takenOn: _t, score: _s, ...rest } = a
+    return rest
+  })
 }

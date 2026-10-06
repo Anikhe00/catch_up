@@ -1,16 +1,28 @@
 import { useState } from 'react'
 import { Button, ProgressBar } from '../components/ui'
 import { Sheet } from '../components/Sheet'
+import { ASSESSMENT_LABELS, caState } from '../logic/assessment'
 import { courseProgress, getUnit, progressCounts, topicOf, type UnitRef } from '../logic/units'
 import { setUnitDone } from '../store/actions'
 import { useAppData } from '../store/AppDataContext'
 import type { Term } from '../types'
 
-export function Grid({ term, today, onOpen }: { term: Term; today: string; onOpen: (r: UnitRef) => void }) {
+export function Grid({
+  term,
+  today,
+  onOpen,
+  onOpenCA,
+}: {
+  term: Term
+  today: string
+  onOpen: (r: UnitRef) => void
+  onOpenCA: (courseId: string) => void
+}) {
   const { updateTerm } = useAppData()
   const [sel, setSel] = useState<UnitRef | null>(null)
   const { done, total } = progressCounts(term)
   const maxWeeks = Math.max(1, ...term.courses.map((c) => c.weeks))
+  const hasCA = term.courses.some((c) => c.assessment)
   const selDone = sel ? getUnit(term, sel.course.id, sel.week).done : false
 
   return (
@@ -27,6 +39,7 @@ export function Grid({ term, today, onOpen }: { term: Term; today: string; onOpe
               {Array.from({ length: maxWeeks }, (_, i) => (
                 <th key={i} className="text-sm font-normal text-soft">{i + 1}</th>
               ))}
+              {hasCA && <th className="pl-2 text-sm font-normal text-soft">CA</th>}
             </tr>
           </thead>
           <tbody>
@@ -52,12 +65,36 @@ export function Grid({ term, today, onOpen }: { term: Term; today: string; onOpe
                     </td>
                   )
                 })}
+                {hasCA && (
+                  <td className="pl-2">
+                    {c.assessment &&
+                      (() => {
+                        const st = caState(term, c)
+                        const styles = {
+                          taken: 'border-accent bg-accent text-on-accent',
+                          ready: 'border-accent bg-accent-soft text-accent',
+                          locked: 'border-dashed border-line bg-surface text-soft',
+                          none: '',
+                        }[st]
+                        return (
+                          <button
+                            type="button"
+                            aria-label={`${c.code}, ${ASSESSMENT_LABELS[c.assessment.type]}, ${st === 'taken' ? 'taken' : st === 'ready' ? 'ready to take' : 'not ready yet'}`}
+                            onClick={() => onOpenCA(c.id)}
+                            className={`h-12 w-12 rounded-2xl border-2 text-sm font-bold ${styles}`}
+                          >
+                            {st === 'taken' ? <span className="pop inline-block">★</span> : st === 'ready' ? 'Go' : 'CA'}
+                          </button>
+                        )
+                      })()}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-sm text-soft">Columns are {term.unitLabel.toLowerCase()}s. Tap a square to open it or mark it done.</p>
+      <p className="mt-2 text-sm text-soft">Columns are {term.unitLabel.toLowerCase()}s{hasCA ? ', then the course assessment (CA)' : ''}. Tap a square to open it or mark it done.</p>
 
       {sel && (
         <Sheet title={`${sel.course.code}, ${term.unitLabel} ${sel.week}`} onClose={() => setSel(null)}>

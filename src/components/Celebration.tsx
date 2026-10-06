@@ -9,23 +9,30 @@ export interface CelebrationInfo {
   body: string
   /** Label for the button that opens whatever comes next, if anything does. */
   nextLabel?: string
+  /** Set when a course finished and its assessment is waiting. */
+  assessmentCourseId?: string
+  assessmentLabel?: string
 }
 
 /** A pop-up that marks a finished unit, course, or the whole plan. */
 export function Celebration({
   info,
   onNext,
+  onAssessment,
   onToday,
   onClose,
 }: {
   info: CelebrationInfo
   onNext: () => void
+  onAssessment: (courseId: string) => void
   onToday: () => void
   onClose: () => void
 }) {
   const first = useRef<HTMLButtonElement>(null)
   const closeRef = useRef(onClose)
-  closeRef.current = onClose
+  useEffect(() => {
+    closeRef.current = onClose
+  })
 
   useEffect(() => {
     first.current?.focus()
@@ -47,7 +54,15 @@ export function Celebration({
         <h2 className="mt-3 text-2xl font-semibold">{info.title}</h2>
         <p className="mt-2 text-soft">{info.body}</p>
         <div className="mt-6 space-y-2">
-          {info.nextLabel ? (
+          {info.assessmentCourseId ? (
+            <>
+              <Button ref={first} variant="primary" className="w-full" onClick={() => onAssessment(info.assessmentCourseId!)}>
+                Record my {info.assessmentLabel}
+              </Button>
+              {info.nextLabel && <Button className="w-full" onClick={onNext}>{info.nextLabel}</Button>}
+              <Button variant="ghost" className="w-full" onClick={onToday}>Back to Today</Button>
+            </>
+          ) : info.nextLabel ? (
             <>
               <Button ref={first} variant="primary" className="w-full" onClick={onNext}>{info.nextLabel}</Button>
               <Button className="w-full" onClick={onToday}>Back to Today</Button>

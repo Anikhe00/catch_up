@@ -69,6 +69,66 @@ export function TermForm({
             onChange={(e) => patch({ unitLabel: e.target.value })}
           />
         </Field>
+        <div>
+          <p className="mb-2 text-sm font-bold text-soft">How do you want to study?</p>
+          <div className="space-y-2" role="radiogroup" aria-label="Study style">
+            {(
+              [
+                ['focus', 'One course at a time', 'Finish a course, take its assessment while it is fresh, then move on.'],
+                ['rotate', 'Rotate through all', 'Every course gets its first unit, then every second unit, and so on.'],
+              ] as const
+            ).map(([value, title, text]) => {
+              const on = (t.studyStyle ?? 'focus') === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => patch({ studyStyle: value })}
+                  className={`flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-left ${on ? 'border-accent bg-accent-soft' : 'border-line bg-surface'}`}
+                >
+                  <span className={`mt-1 h-5 w-5 shrink-0 rounded-full border-2 ${on ? 'border-accent bg-accent' : 'border-line'}`} aria-hidden="true" />
+                  <span>
+                    <span className="block font-bold">{title}</span>
+                    <span className="block text-sm text-soft">{text}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        {(t.studyStyle ?? 'focus') === 'focus' && (
+          <div>
+            <p className="mb-2 text-sm font-bold text-soft">Course dates</p>
+            <div className="space-y-2" role="radiogroup" aria-label="Course dates">
+              {(
+                [
+                  ['auto', 'Set automatically', 'The days until your study target date are shared across courses, in order.'],
+                  ['manual', 'I will set them', 'Give each course its own finish-by date when you edit it.'],
+                ] as const
+              ).map(([value, title, text]) => {
+                const on = (t.slotMode ?? 'auto') === value
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => patch({ slotMode: value })}
+                    className={`flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-left ${on ? 'border-accent bg-accent-soft' : 'border-line bg-surface'}`}
+                  >
+                    <span className={`mt-1 h-5 w-5 shrink-0 rounded-full border-2 ${on ? 'border-accent bg-accent' : 'border-line'}`} aria-hidden="true" />
+                    <span>
+                      <span className="block font-bold">{title}</span>
+                      <span className="block text-sm text-soft">{text}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </Section>
       )}
 
@@ -88,7 +148,7 @@ export function TermForm({
 
       {show('courses') && (
       <Section title={only ? '' : 'Courses'} hint="Tap a course to edit it and plan what to study each week. Courses are studied in this order.">
-        <CoursesEditor courses={t.courses} unitLabel={label} onChange={(courses) => patch({ courses })} />
+        <CoursesEditor courses={t.courses} unitLabel={label} manualDates={(t.studyStyle ?? 'focus') === 'focus' && t.slotMode === 'manual'} onChange={(courses) => patch({ courses })} />
       </Section>
       )}
 

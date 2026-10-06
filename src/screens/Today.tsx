@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { Button, Card, Check, Switch } from '../components/ui'
+import { Button, Card, Switch } from '../components/ui'
 import { Says, type Mood } from '../components/Mascot'
+import { ASSESSMENT_LABELS, caState, closesOn, readyAssessments, upcomingAssessments } from '../logic/assessment'
+import { formatDate } from '../logic/dates'
 import { computePace, type Pace } from '../logic/pace'
-import { getUnit, nextUnit, orderedUnits, isDone, topicOf, type UnitRef } from '../logic/units'
-import { setWriting, toggleBusy } from '../store/actions'
+import { courseSlots } from '../logic/plan'
+import { getUnit, nextUnit, studyOrder, studyStyle, isDone, topicOf, type UnitRef } from '../logic/units'
+import { toggleBusy } from '../store/actions'
 import { useAppData } from '../store/AppDataContext'
 import type { Term } from '../types'
 
@@ -28,6 +31,13 @@ const QUIPS = [
   'Pip believes in a short break.',
 ]
 
+function closing(daysLeft: number, on: string): string {
+  if (daysLeft < 0) return `The window closed on ${formatDate(on)}. It may still be worth checking.`
+  if (daysLeft === 0) return 'Closes today.'
+  if (daysLeft === 1) return 'Closes tomorrow.'
+  return `Closes in ${daysLeft} days, on ${formatDate(on)}.`
+}
+
 function greeting(): string {
   const h = new Date().getHours()
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
@@ -37,59 +47,8 @@ function paceLine(p: Pace): string {
   if (p.status.kind === 'behind')
     return `${units(p.status.units)} behind. Today's target already takes that into account.`
   if (p.status.kind === 'ahead')
-    return `${units(p.status.units)} ahead. You can bank the extra time for writing.`
+    return `${units(p.status.units)} ahead. You can bank the extra time for your assessments.`
   return 'On track.'
-}
-
-function WritingList({ term }: { term: Term }) {
-  const { updateTerm } = useAppData()
-  const [draft, setDraft] = useState('')
-  const set = (writing: Term['writing']) => updateTerm((t) => setWriting(t, writing))
-  const add = () => {
-    if (!draft.trim()) return
-    set([...term.writing, { id: crypto.randomUUID(), label: draft.trim(), done: false }])
-    setDraft('')
-  }
-  return (
-    <div className="mt-10">
-      <h2 className="text-xl font-semibold">Writing</h2>
-      <div className="mt-3 space-y-2">
-        {term.writing.map((w) => (
-          <div key={w.id} className="flex items-center gap-1">
-            <div className="flex-1">
-              <Check checked={w.done} onChange={() => set(term.writing.map((x) => (x.id === w.id ? { ...x, done: !x.done } : x)))}>
-                {w.label}
-              </Check>
-            </div>
-            <button
-              type="button"
-              aria-label={`Remove ${w.label}`}
-              className="h-12 w-12 shrink-0 rounded-xl text-soft hover:bg-accent-soft"
-              onClick={() => set(term.writing.filter((x) => x.id !== w.id))}
-            >
-              ✕
-            </button>
-          </div>
-        ))}
-        <form
-          className="flex gap-2 pt-1"
-          onSubmit={(e) => {
-            e.preventDefault()
-            add()
-          }}
-        >
-          <input
-            aria-label="New writing task"
-            placeholder="Add a writing task"
-            className="w-full rounded-2xl border-2 border-line bg-surface px-4"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-          <Button type="submit">Add</Button>
-        </form>
-      </div>
-    </div>
-  )
 }
 
 export function Today({
@@ -98,22 +57,25 @@ export function Today({
   pick,
   onPick,
   onOpen,
+  onOpenCA,
 }: {
   term: Term
   today: string
   pick: UnitRef | null
   onPick: (r: UnitRef | null) => void
   onOpen: (r: UnitRef) => void
+  onOpenCA: (courseId: string) => void
 }) {
   const { updateTerm } = useAppData()
   const [choosing, setChoosing] = useState(false)
   const pace = computePace(term, today)
 
-  const open = orderedUnits(term).filter((u) => !isDone(term, u))
+  const open = studyOrder(term).filter((u) => !isDone(term, u))
   const picked = pick && open.find((u) => u.course.id === pick.course.id && u.week === pick.week)
   const suggested = picked ?? nextUnit(term)
-  const writing = pace.phase === 'writing'
+  const final = pace.phase === 'final'
   const allDone = pace.remaining === 0
+  const pendingCAs = term.courses.filter((c) => c.assessment && !c.assessment.takenOn).length
 
   const mood: Mood = allDone
     ? 'party'
@@ -123,6 +85,11 @@ export function Today({
         ? 'happy'
         : 'calm'
 
+  const focus = studyStyle(term) === 'focus'
+  const slot = suggested && focus ? courseSlots(term, today).find((sl) => sl.course.id === suggested.course.id) : undefined
+  const ready = readyAssessments(term)
+  const upcoming = upcomingAssessments(term, today)
+
   const stepsDone = suggested
     ? term.routine.filter((s) => getUnit(term, suggested.course.id, suggested.week).steps[s.id]).length
     : 0
@@ -131,30 +98,63 @@ export function Today({
     <main className="rise mx-auto max-w-md px-5 pb-28 pt-8">
       <div>
         <p className="text-sm font-bold text-soft">{term.name}</p>
-        <h1 className="squiggle text-3xl font-semibold">{writing ? 'Writing time' : 'Today'}</h1>
+        <h1 className="squiggle text-3xl font-semibold">{final ? 'The final stretch' : 'Today'}</h1>
       </div>
 
       <div className="mt-4">
         <Says mood={mood} quips={QUIPS}>
-          <p className="font-display text-lg font-semibold">{allDone ? 'All the units are done.' : `${greeting()}.`}</p>
+          <p className="font-display text-lg font-semibold">
+            {allDone ? (pendingCAs ? 'All the units are done.' : 'Everything is done.') : `${greeting()}.`}
+          </p>
           <p className="text-soft" aria-live="polite">
             {allDone
-              ? 'The rest of your time is for writing.'
-              : writing
-                ? 'The study target date has passed. Writing comes next.'
+              ? pendingCAs
+                ? 'Take your remaining assessments while it is all fresh.'
+                : 'Nothing is left on your list. Rest well.'
+              : final
+                ? `The study target date has passed. ${units(pace.remaining)} still open before the deadline.`
                 : paceLine(pace)}
           </p>
         </Says>
       </div>
 
       <div className="mt-6 flex gap-3">
-        {!writing && <Countdown label="To study target" n={pace.daysToTarget} tilt="tilt-l" />}
+        {!final && <Countdown label="To study target" n={pace.daysToTarget} tilt="tilt-l" />}
         <Countdown label="To final deadline" n={pace.daysToDeadline} tilt="tilt-r" />
       </div>
 
+      {upcoming.length > 0 && (
+        <Card className="mt-8">
+          <p className="text-sm font-bold text-soft">Coming up</p>
+          <ul className="mt-2 space-y-3">
+            {upcoming.map((u) => (
+              <li key={u.course.id}>
+                <p className="font-bold">{u.course.code}: {ASSESSMENT_LABELS[u.course.assessment!.type]}</p>
+                <p className="text-soft">
+                  {closing(u.daysLeft, closesOn(term, u.course))}
+                  {u.unitsLeft > 0 && ` ${units(u.unitsLeft)} left to study first.`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {ready.map((c) => (
+        <Card key={c.id} className="mt-8 bg-accent-soft">
+          <p className="text-sm font-bold text-soft">Ready to take</p>
+          <p className="mt-1 font-display text-2xl font-semibold">{c.code}: {ASSESSMENT_LABELS[c.assessment!.type]}</p>
+          <p className="text-soft">
+            Every {term.unitLabel.toLowerCase()} is done, so this is the best time to take it.
+            {` Closes on ${formatDate(closesOn(term, c))}.`}
+          </p>
+          <Button variant="primary" className="mt-4 w-full" onClick={() => onOpenCA(c.id)}>Record it</Button>
+        </Card>
+      ))}
+
       {!allDone && suggested && (
         <Card className="mt-8">
-          <p className="text-sm font-bold text-soft">{writing ? 'Still open' : "Today's unit"}</p>
+          <p className="text-sm font-bold text-soft">{final ? 'Still open' : "Today's unit"}</p>
           <p className="mt-1 font-display text-2xl font-semibold">
             {suggested.course.code}, {term.unitLabel} {suggested.week}
           </p>
@@ -162,6 +162,14 @@ export function Today({
             <p className="mt-1 font-bold">{topicOf(suggested.course, suggested.week)}</p>
           )}
           <p className="text-soft">{suggested.course.title}</p>
+          {focus && !final && (
+            <p className="mt-3 rounded-2xl bg-accent-soft px-4 py-2 text-sm">
+              {slot ? `Aim to finish ${suggested.course.code} by ${formatDate(slot.endDate)}` : `Studying ${suggested.course.code}`}
+              {suggested.course.assessment && caState(term, suggested.course) !== 'taken'
+                ? `, then take the ${ASSESSMENT_LABELS[suggested.course.assessment.type]}.`
+                : '.'}
+            </p>
+          )}
           {stepsDone > 0 && (
             <p className="mt-2 text-sm text-soft">
               {stepsDone} of {term.routine.length} steps done
@@ -203,7 +211,7 @@ export function Today({
         </Card>
       )}
 
-      {!writing && !allDone && (
+      {!final && !allDone && (
         <div className="mt-8 space-y-4">
           <p>
             {pace.doneToday >= pace.todayUnits && pace.doneToday > 0
@@ -221,13 +229,6 @@ export function Today({
         </div>
       )}
 
-      {writing && !allDone && (
-        <p className="mt-8 text-soft">
-          {units(pace.remaining)} still open from the study plan. Finish them whenever you can, then focus on writing.
-        </p>
-      )}
-
-      {(writing || allDone) && <WritingList term={term} />}
     </main>
   )
 }

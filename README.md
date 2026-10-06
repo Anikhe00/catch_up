@@ -51,12 +51,23 @@ Open it once while online so it can cache itself. After that it works offline.
 
 Everything is stored in your browser's localStorage on that device. It does not sync between devices. Use **Settings → Export backup** to save one JSON file with every term, including archived ones, and **Import backup** to restore it. Clearing the browser's site data deletes the app's data, so export now and then.
 
+## Studying one course at a time
+
+By default the app studies one course at a time: finish a course, take its assessment while everything is fresh, then move on. You can switch to rotating through every course (all first units, then all second units) in Settings.
+
+- Each course can have an assessment: CMA (quiz), Virtual lab, Individual project, or Case study, with an optional closing date.
+- The days from today to your study target date are split across courses in your course order, in proportion to their open units, so Today can say "Aim to finish MIT 8101 by 9 Oct, then take the CMA".
+- When a course's units are all done, Today shows a "Ready to take" card and the finish pop-up offers to record the assessment (taken date and an optional score).
+- Today has a "Coming up" card for assessments that close within 10 days. A course with no closing date uses your final deadline.
+- Prefer your own dates? Set "Course dates" to "I will set them" and give each course a finish-by date. Today's target then follows the course you are on.
+- The Grid has a CA column, and History keeps each assessment's result.
+
 ## How the pace works
 
 - Daily target = units remaining at the start of today ÷ study days left (today through the study target date).
 - A busy day counts as half a day of capacity.
 - Missed days quietly raise the daily target. There are no streaks to break.
-- After the study target date, Today switches to a countdown to the final deadline with an editable writing checklist.
+- After the study target date, Today switches to "The final stretch": the countdown to the final deadline, any units still open, and your assessments.
 
 ## Project layout
 

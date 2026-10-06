@@ -12,6 +12,7 @@ import { Settings } from './screens/Settings'
 import type { UnitRef } from './logic/units'
 import { Doodles } from './components/Doodles'
 import { Celebration } from './components/Celebration'
+import { AssessmentSheet } from './components/AssessmentSheet'
 import { useCelebration } from './store/useCelebration'
 
 type Tab = 'today' | 'grid' | 'history' | 'settings'
@@ -36,6 +37,7 @@ function Shell() {
   const [open, setOpen] = useState<{ courseId: string; week: number } | null>(null)
   const [pick, setPick] = useState<UnitRef | null>(null)
   const { shown, dismiss } = useCelebration(term)
+  const [caId, setCaId] = useState<string | null>(null)
 
   if (!term) {
     const archived = data.terms.filter((t) => t.archivedAt)
@@ -58,14 +60,20 @@ function Shell() {
         dismiss()
         if (shown.next) openUnit(shown.next)
       }}
+      onAssessment={(id) => {
+        dismiss()
+        setCaId(id)
+      }}
     />
   )
+  const caSheet = caId && <AssessmentSheet term={term} courseId={caId} today={today} onClose={() => setCaId(null)} />
 
   if (open) {
     return (
       <>
         <Routine term={term} courseId={open.courseId} week={open.week} today={today} onBack={() => setOpen(null)} />
         {celebration}
+        {caSheet}
       </>
     )
   }
@@ -74,8 +82,9 @@ function Shell() {
     <>
       <Doodles />
       {celebration}
-      {tab === 'today' && <Today term={term} today={today} pick={pick} onPick={setPick} onOpen={openUnit} />}
-      {tab === 'grid' && <Grid term={term} today={today} onOpen={openUnit} />}
+      {caSheet}
+      {tab === 'today' && <Today term={term} today={today} pick={pick} onPick={setPick} onOpen={openUnit} onOpenCA={setCaId} />}
+      {tab === 'grid' && <Grid term={term} today={today} onOpen={openUnit} onOpenCA={setCaId} />}
       {tab === 'history' && <History onNewTerm={() => archiveTerm(today)} />}
       {tab === 'settings' && <Settings term={term} today={today} />}
 
