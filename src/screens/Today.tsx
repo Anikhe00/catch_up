@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button, Card, Switch } from '../components/ui'
+import { CourseOrderSheet } from '../components/CourseOrderSheet'
 import { Says, type Mood } from '../components/Mascot'
 import { ASSESSMENT_LABELS, caState, closesOn, readyAssessments, upcomingAssessments } from '../logic/assessment'
 import { formatDate } from '../logic/dates'
@@ -68,6 +69,7 @@ export function Today({
 }) {
   const { updateTerm } = useAppData()
   const [choosing, setChoosing] = useState(false)
+  const [ordering, setOrdering] = useState(false)
   const pace = computePace(term, today)
 
   const open = studyOrder(term).filter((u) => !isDone(term, u))
@@ -170,6 +172,11 @@ export function Today({
                 : '.'}
             </p>
           )}
+          {focus && !final && term.courses.length > 1 && (
+            <button type="button" onClick={() => setOrdering(true)} className="mt-2 text-sm font-bold text-accent underline decoration-wavy decoration-1 underline-offset-4">
+              Change course order
+            </button>
+          )}
           {stepsDone > 0 && (
             <p className="mt-2 text-sm text-soft">
               {stepsDone} of {term.routine.length} steps done
@@ -229,6 +236,7 @@ export function Today({
         </div>
       )}
 
+      {ordering && <CourseOrderSheet term={term} onClose={() => setOrdering(false)} />}
     </main>
   )
 }

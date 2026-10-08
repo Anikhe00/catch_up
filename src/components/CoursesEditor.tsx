@@ -3,6 +3,7 @@ import { ASSESSMENT_LABELS, ASSESSMENT_TYPES } from '../logic/assessment'
 import { formatDate } from '../logic/dates'
 import type { AssessmentType, Course } from '../types'
 import { Mascot } from './Mascot'
+import { ReorderList } from './ReorderList'
 import { Sheet } from './Sheet'
 import { Button, Field, IconButton, inputClass } from './ui'
 
@@ -28,6 +29,7 @@ export function CoursesEditor({
 }) {
   const [editId, setEditId] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [reordering, setReordering] = useState(false)
   const idx = courses.findIndex((c) => c.id === editId)
   const course = idx >= 0 ? courses[idx] : null
   const label = unitLabel.trim() || 'Unit'
@@ -61,6 +63,15 @@ export function CoursesEditor({
           <p className="text-soft">No courses yet. Add your first one below.</p>
         </div>
       )}
+      {courses.length > 1 && (
+        <Button className="w-full" onClick={() => setReordering((r) => !r)} aria-pressed={reordering}>
+          {reordering ? 'Done reordering' : 'Change the order'}
+        </Button>
+      )}
+      {reordering ? (
+        <ReorderList courses={courses} onChange={onChange} meta={(c) => summary(c, manualDates)} />
+      ) : (
+        <>
       {courses.map((c) => (
         <button
           key={c.id}
@@ -76,6 +87,8 @@ export function CoursesEditor({
           <span className="shrink-0 rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">Edit</span>
         </button>
       ))}
+        </>
+      )}
       <Button className="w-full border-dashed" onClick={add}>Add a course</Button>
 
       {course && (
